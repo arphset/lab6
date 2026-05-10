@@ -4,11 +4,20 @@ header('Content-Type: text/html; charset=UTF-8');
 $dsn = 'mysql:host=localhost;dbname=web2025;charset=utf8mb4';
 $db_user = 'root';
 $db_pass = '';
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+error_reporting(0);
+ini_set('display_errors', 0);
+
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Ошибка подключения к БД: " . $e->getMessage());
+    // Детали ошибки записываем только в лог сервера
+    error_log($e->getMessage());
+    // Пользователю показываем общее сообщение
+    die('Ошибка подключения к базе данных. Попробуйте позже.');
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -29,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $errors = array();
     $fields = ['fio', 'email', 'phone', 'birthdate', 'bio', 'photo', 'language'];
     foreach ($fields as $field) {
+
         $errors[$field] = !empty($_COOKIE["{$field}_error"]);
     }
 
@@ -53,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Загрузка предыдущих значений из куки
     $values = array();
     foreach ($fields as $field) {
-        $values[$field] = empty($_COOKIE["{$field}_value"]) ? '' : strip_tags($_COOKIE["{$field}_value"]);
+        $values['fio'] = empty($_COOKIE['fio_value']) ? '' : htmlspecialchars($_COOKIE['fio_value'], ENT_QUOTES, 'UTF-8');
     }
 
     // Если пользователь авторизован, загружаем данные из БД (перезаписывая куки)
@@ -71,6 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     include('form.php');
 } 
 else {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('Ошибка безопасности: невалидный CSRF токен.');
     // POST запрос
     $errors = FALSE;
     $fields = ['fio', 'email', 'phone', 'birthdate', 'bio', 'photo', 'language'];
