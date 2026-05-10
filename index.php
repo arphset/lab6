@@ -9,6 +9,12 @@ if (empty($_SESSION['csrf_token'])) {
 }
 error_reporting(0);
 ini_set('display_errors', 0);
+session_set_cookie_params([
+    'secure' => true,   // Отправка только по HTTPS
+    'httponly' => true, // Недоступно для JavaScript (защита от XSS кражи)
+    'samesite' => 'Lax' // Защита от CSRF
+]);
+
 
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass);
