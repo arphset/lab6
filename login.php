@@ -2,11 +2,17 @@
 header('Content-Type: text/html; charset=UTF-8');
 $dsn = 'mysql:host=localhost;dbname=web2025;charset=utf8mb4';
 $db_user = 'root'; $db_pass = '';
+error_reporting(0);
+ini_set('display_errors', 0);
+
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Ошибка БД: " . $e->getMessage());
+    // Детали ошибки записываем только в лог сервера
+    error_log($e->getMessage());
+    // Пользователю показываем общее сообщение
+    die('Ошибка подключения к базе данных. Попробуйте позже.');
 }
 
 $session_started = false;
