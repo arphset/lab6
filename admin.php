@@ -6,17 +6,24 @@
 $dsn = 'mysql:host=localhost;dbname=u82579;charset=utf8mb4';
 $db_user = 'u82579';
 $db_pass = '1953280';
+error_reporting(0);
+ini_set('display_errors', 0);
 
 // === DRY: Подключение к БД ===
 function getDB() {
     global $dsn, $db_user, $db_pass;
     static $pdo = null;
     if ($pdo === null) {
-        $pdo = new PDO($dsn, $db_user, $db_pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]);
-    }
+        try {
+            $pdo = new PDO($dsn, $db_user, $db_pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            // Детали ошибки записываем только в лог сервера
+            error_log($e->getMessage());
+            // Пользователю показываем общее сообщение
+            die('Ошибка подключения к базе данных. Попробуйте позже.');
+        }
+            }
     return $pdo;
 }
 
